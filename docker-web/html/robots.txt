@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /config.php
+Disallow: /includes/
+
+<!-- Note to self: the page router in index.php still includes whatever ?page= is
+     given, straight off disk. Have to sanitize that before launch. Milo. -->

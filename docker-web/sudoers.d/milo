@@ -1,0 +1,3 @@
+# Milo needs to sweep old cache files across the app tree without a password.
+# Granting find outright was the quick fix; it is also a full root shell.
+milo ALL=(ALL) NOPASSWD: /usr/bin/find

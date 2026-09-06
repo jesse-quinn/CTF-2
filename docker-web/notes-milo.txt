@@ -1,0 +1,5 @@
+Deployment notes (Milo)
+
+- Production host is reachable over SSH as the "victor" account.
+- Use the deploy key in ~/.ssh/deploy_key, not a password.
+- From this box:  ssh -i ~/.ssh/deploy_key victor@<prod-host>
