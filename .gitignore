@@ -1,0 +1,3 @@
+# The inner stack keeps no bind-mounted state on the host; the nested Docker
+# engine's data lives on the outer container's /var/lib/docker volume.
+.DS_Store
