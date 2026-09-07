@@ -21,8 +21,11 @@ SSH.
   `curl 'http://TARGET:8080/index.php?page=/etc/passwd'` returns the passwd file
   and shows the `milo` and `www-data` accounts.
 - The application source is readable through a php filter wrapper, for example
-  `index.php?page=php://filter/convert.base64-encode/resource=config.php`, but
-  the intended route to the config secret is the RCE below.
+  `index.php?page=php://filter/convert.base64-encode/resource=config.php`. This is
+  a legitimate LFI shortcut: base64-decoding the result discloses `config.php`
+  including milo's reused credential, without any RCE. The log-poisoning RCE below
+  is the intended teaching primitive, but this direct read reaches the same
+  credential.
 
 ## Stage 2 - Log poisoning to RCE (www-data)
 
@@ -54,6 +57,13 @@ SSH.
 - Read the first flag:
   `curl 'http://TARGET:8080/index.php?page=/var/log/apache2/access.log&c=cat%20/var/www/web-user.txt'`
   gives the `FLAG{...}` web-user flag.
+- Known LFI shortcut: the web-user flag file is owned by `www-data` and contains
+  no PHP tags, so the same unfiltered LFI includes it directly and prints it,
+  without poisoning any log:
+  `curl 'http://TARGET:8080/index.php?page=/var/www/web-user.txt'`.
+  Because `www-data` is both the LFI identity and the RCE identity, a same-user
+  flag is inherently include-readable; the RCE above is the intended teaching
+  point, not a hard gate for this flag.
 
 ## Stage 3 - www-data to milo (reused credential)
 
@@ -98,16 +108,22 @@ Two outer flags, both `MAIN_FLAG{...}`.
   host filesystem and read the flag:
 
   ```bash
-  docker run --rm -v /:/host alpine cat /host/root/root.txt
+  docker run --rm -v /:/host php:8.4-apache cat /host/root/root.txt
   ```
 
-- That prints the final outer-host root `MAIN_FLAG{...}`.
+- That prints the final outer-host root `MAIN_FLAG{...}`. `php:8.4-apache` is the
+  inner web image's own base, so the outer engine already holds it from the inner
+  build and this step needs no network. Any image already present in the outer
+  engine works; do not reach for one that has to be pulled at solve time.
 
 ## Notes and red herrings
 
-- The php filter wrapper in Stage 1 reveals `config.php` source directly, which
-  is an alternative way to reach milo's credential without RCE; the RCE is still
-  required for the `www-data` flag and is the intended teaching point.
+- The unfiltered LFI supports two direct reads that skip the RCE entirely: the
+  `php://filter` wrapper discloses `config.php` (milo's credential), and a plain
+  include of `/var/www/web-user.txt` prints the `www-data` flag (a same-user file
+  with no PHP tags). The log-poisoning RCE is the intended teaching point, not a
+  hard requirement for any flag; document it as such rather than claiming it is
+  enforced.
 - `victor`'s outer-host password is a random high-entropy value, not a hint; the
   intended login is the recovered deploy key.
 - The deploy key is the only credential that reaches `victor`; the Docker socket

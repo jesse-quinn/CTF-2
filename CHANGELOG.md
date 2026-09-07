@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-06 - Integrity fixes
+
+Corrections from an adversarial review that traced the five-flag chain end to end.
+No flag values changed and no scoring changed.
+
+- Walkthrough honesty: the unfiltered LFI directly reads the `www-data` flag
+  (`index.php?page=/var/www/web-user.txt`) and dumps milo's credential
+  (`config.php` via `php://filter`), so the log-poisoning RCE is optional. The
+  walkthrough now documents both direct-read shortcuts and no longer claims the
+  RCE is required for the `www-data` flag; the RCE remains the intended teaching
+  primitive.
+- Offline-reproducible climax: the socket-breakout command reuses `php:8.4-apache`
+  (already in the outer engine from the inner build) instead of pulling `alpine`,
+  so the final step needs no network at solve time.
+- Deterministic inner sshd host keys: `web.Dockerfile` now runs `ssh-keygen -A` at
+  build time so the milo SSH lateral move stays reachable even if a future base
+  revision defers openssh key generation to a first-boot unit.
+- Outer-image hygiene: dropped the unused `nano`, removed the redundant global
+  `/bin/sh` to `/bin/bash` rewrite (victor and root already use bash), and set the
+  inner deploy-key copy to mode `0600`.
+
 ## Initial release
 
 An original docker-in-docker CTF themed on web Local File Inclusion leading to

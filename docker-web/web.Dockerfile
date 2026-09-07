@@ -32,7 +32,11 @@ RUN usermod -aG adm www-data \
     && rm -f /var/log/apache2/access.log
 
 # sshd: only the milo account is reachable, by password; root login is off.
+# Generate host keys at build time so sshd starts regardless of whether the base
+# image's openssh postinstall generated them (some revisions defer keygen to a
+# first-boot unit that never fires in a container).
 RUN mkdir -p /run/sshd \
+    && ssh-keygen -A \
     && sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config \
     && sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
@@ -43,7 +47,7 @@ COPY --chmod=644 ./html/ /var/www/html/
 
 # Milo's recovered deploy key opens the "victor" account on the outer host, and
 # a note tells him where to point it.
-COPY --chown=milo:milo --chmod=700 ./ssh/deploy_key /home/milo/.ssh/deploy_key
+COPY --chown=milo:milo --chmod=600 ./ssh/deploy_key /home/milo/.ssh/deploy_key
 COPY --chown=milo:milo --chmod=644 ./ssh/deploy_key.pub /home/milo/.ssh/deploy_key.pub
 COPY --chown=milo:milo --chmod=600 ./notes-milo.txt /home/milo/notes-milo.txt
 

@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 # Base packages for the outer CTF host: its own Docker engine plus sshd.
 RUN apt-get update \
-    && apt-get install -y docker.io docker-compose-v2 openssh-server nano \
+    && apt-get install -y docker.io docker-compose-v2 openssh-server \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && echo "Setup docker env + ssh env" \
@@ -14,8 +14,7 @@ RUN apt-get update \
     && useradd -m -s /bin/bash victor \
     && echo -n "victor:pEF2E5m3xXSKbC3v/HSW3p84" | chpasswd \
     && userdel -r ubuntu 2>/dev/null || true \
-    && echo "Bash configuring" \
-    && sed -i 's#/bin/sh#/bin/bash#' /etc/passwd \
+    && echo "Bash history discarded (victor and root already use /bin/bash)" \
     && ln -sf /dev/null /root/.bash_history \
     && ln -sf /dev/null /home/victor/.bash_history
 
